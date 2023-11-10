@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: Chat-GPT
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: Chat-GPT
+  name: Chat-GPT
+type: Opaque
+data:
+  OPENAI_API_KEY: <base64 encoded key>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: Chat-GPT
+  name: Chat-GPT
+  labels:
+    app: Chat-GPT
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: Chat-GPT
+  template:
+    metadata:
+      labels:
+        app: Chat-GPT
+    spec:
+      containers:
+        - name: Chat-GPT
+          image: <docker user>/Chat-GPT:latest
+          resources: {}
+          ports:
+            - containerPort: 3000
+          env:
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: Chat-GPT
+                  key: OPENAI_API_KEY
+---
+kind: Service
+apiVersion: v1
+metadata:
+  namespace: Chat-GPT
+  name: Chat-GPT
+  labels:
+    app: Chat-GPT
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 3000
+  selector:
+    app: Chat-GPT
+  type: ClusterIP
